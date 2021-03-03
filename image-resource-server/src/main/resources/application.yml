@@ -1,0 +1,35 @@
+server:
+  error:
+    include-stacktrace: never
+  port: 8050
+ 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    health:
+      show-details: always  
+---  
+spring:
+  webflux.base-path: /api
+  profiles:
+    active: default
+  
+---
+spring:
+  profiles: default
+  r2dbc:
+    url: r2dbc:h2:mem:///test?options=DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    name: sa
+    password:
+    
+---
+spring:
+  profiles: test
+  r2dbc:
+    url: r2dbc:h2:mem:///test?options=DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    name: sa
+    password:          
+      
