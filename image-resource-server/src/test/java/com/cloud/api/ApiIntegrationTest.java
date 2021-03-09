@@ -35,10 +35,12 @@ import org.springframework.web.reactive.function.BodyInserters;
 import com.cloud.data.Image;
 import com.cloud.service.impl.ImageServiceImpl;
 
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 
+@Slf4j
 @ActiveProfiles("test")
 @ExtendWith({ RestDocumentationExtension.class, SpringExtension.class })
 @WebFluxTest
@@ -68,7 +70,7 @@ public class ApiIntegrationTest {
                         .withRequestDefaults(prettyPrint())
                  .withResponseDefaults(prettyPrint()))
                 .build();
-        System.out.println("before:"+this.webTestClient);
+        log.info("before: {}", this.webTestClient);
     }
 
     @Test

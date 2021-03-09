@@ -1,7 +1,7 @@
 server:
   error:
     include-stacktrace: never
-  port: 8050
+  port: 9050
  
 management:
   endpoints:
@@ -19,7 +19,9 @@ spring:
   
 ---
 spring:
-  profiles: default
+  config:
+    activate:
+      on-profile: default
   r2dbc:
     url: r2dbc:h2:mem:///test?options=DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     name: sa
@@ -27,9 +29,21 @@ spring:
     
 ---
 spring:
-  profiles: test
+  config:
+    activate:
+      on-profile: test
   r2dbc:
     url: r2dbc:h2:mem:///test?options=DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     name: sa
-    password:          
-      
+    password: 
+
+---
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8083/auth/realms/research 
+          
+###  The issuer url is used to look up the well known configuration page to get all required configuration settings to set up a resource server
+ 

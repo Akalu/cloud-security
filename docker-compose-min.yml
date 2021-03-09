@@ -2,6 +2,17 @@ version: '3.7'
 
 services:
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:12.0.4
+    container_name: keycloak
+    environment:
+        KEYCLOAK_PASSWORD: admin
+        KEYCLOAK_USER: admin
+    ports:
+        - '8083:8080'
+        - '8443:8443'
+        - '9990:9990'
+
   resource-server:
     build: image-resource-server
     image: image_resource_server
@@ -15,4 +26,5 @@ services:
     container_name: image_client
     ports:
       - '8051:8051'
-      
+ 
+     

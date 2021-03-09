@@ -2,6 +2,8 @@ package com.cloud.config;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.autoconfigure.security.reactive.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
@@ -9,11 +11,13 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.userdetails.MapReactiveUserDetailsService;
+import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
@@ -29,11 +33,37 @@ import com.cloud.model.Role;
  */
 @EnableWebFluxSecurity
 @EnableReactiveMethodSecurity
+//@EnableSpringWebSession
 public class WebSecurityConfiguration {
+	
+
+	private final ReactiveUserDetailsService userDetailsService;
+	
+	@Autowired
+	public WebSecurityConfiguration(ReactiveUserDetailsService userDetailsService) {
+		this.userDetailsService = userDetailsService;
+	}
 
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain2(ServerHttpSecurity http) {
-        return http.csrf().disable().httpBasic().and().authorizeExchange().anyExchange().authenticated().and().cors().and().build();
+    	
+    	// NoOpServerSecurityContextRepository is used to for stateless sessions so no session or state is persisted between requests.
+        // The client must send the Authorization header with every request.
+        NoOpServerSecurityContextRepository sessionConfig = NoOpServerSecurityContextRepository.getInstance();
+
+        http
+        .securityContextRepository(sessionConfig)
+          .csrf().disable().httpBasic().and().cors().and().authorizeExchange()
+        		.matchers(EndpointRequest.toAnyEndpoint()).hasAnyRole(Role.DB_USER.name(), Role.DB_ADMIN.name())
+        		.pathMatchers("/images/**")
+                .hasAnyRole(Role.DB_ADMIN.name(), Role.DB_USER.name())// potentially here can be complex logic
+        		.anyExchange().authenticated()
+        		.and()
+        		.oauth2ResourceServer()
+                .jwt() 
+                .jwtAuthenticationConverter(dbUserJwtAuthenticationConverter());
+                
+        return http.build();
     }
 
     @Profile("test")
@@ -59,17 +89,43 @@ public class WebSecurityConfiguration {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
-
+    
+    /**
+     * Beans declarations
+     */
+    
+    /**
+     * This bean declares an in-memory databases for user with username=resource_client and roles DB_USER, DB_ADMIN
+     * Note, the password is specified - the BASIC auth will still work, but the auth must be performed via oath2 authorization server
+     * @return
+     */
     @Bean
     @Primary
     public MapReactiveUserDetailsService userDetailsService() {
+        UserDetails user = User.withUsername("resource_client").password("{noop}123").roles(Role.DB_USER.name(), Role.DB_ADMIN.name()).build();
+        return new MapReactiveUserDetailsService(user);
+    }
+    
+    /**
+     * This bean declares an in-memory databases for user with username=user and password=123 and roles DB_USER, DB_ADMIN
+     * @return
+     */
+    @Bean
+    //@Primary
+    public MapReactiveUserDetailsService userDetailsServiceOffLine() {
         UserDetails user = User.withUsername("user").password("{noop}123").roles(Role.DB_USER.name(), Role.DB_ADMIN.name()).build();
         return new MapReactiveUserDetailsService(user);
     }
 
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+    }
+    
+    @Bean
+    public DBUserJwtAuthenticationConverter dbUserJwtAuthenticationConverter() {
+      return new DBUserJwtAuthenticationConverter(userDetailsService);
     }
 
 }
