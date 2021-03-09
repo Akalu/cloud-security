@@ -131,13 +131,18 @@ Let’s now try to login to the account console to verify the user is configured
 2) Login with resource_client and the password you created earlier
 
 
-## Testing the secure connection via keycloak
+## Testing the secure connection via test client app at keycloak
 
 1) Create a client: <Realm_name> -> Clients -> Create 
   in this example I added a client with id=test-client and base and redirect url https://www.keycloak.org/app/
 2) go to https://www.keycloak.org/app/
 3) choose https://localhost:8443/auth as your keycloak server, research realm and test-client as input and test oath2 authorization flow 
    After successful authorization one can see the screen keycloak_07b.png and toast for John Smith
+   
+## Creating a client app
+
+1) Create a client: <Realm_name> -> Clients -> Create 
+  in this example I added a client with id=resource-client-id and empty base/root urls and redirect url as *
    
 ## Testing public token via rest request
 
@@ -210,6 +215,57 @@ Some further details can be found here: https://www.baeldung.com/spring-security
 ## Settings on the resource server's client side
 
 
+The settings in the YAML file for the client must be as follows:
+
+```
+spring:
+  security:
+      oauth2:
+        client:
+          registration:
+            keycloak: 
+              client-id: 'resource-client-id'
+              client-secret: '123'
+              authorizationGrantType: authorization_code
+              redirect-uri: '{baseUrl}/login/oauth2/code/{registrationId}'
+              scope: openid
+          provider:
+            keycloak:
+              issuerUri: http://localhost:8083/auth/realms/research 
+              user-name-attribute: name
+```
+
+
+Navigate browser to http://localhost:8051/userinfo and after authorization at Keycloak the server returns the information about current authorized user like so:
+
+```
+{
+	"at_hash": "QtvASZVInhQbv-Ch6sPhYw",
+	"sub": "b635555b-c16e-475a-98d4-b20c5d69e53c",
+	"email_verified": false,
+	"iss": "http://localhost:8083/auth/realms/research",
+	"typ": "ID",
+	"preferred_username": "resource_client",
+	"given_name": "John",
+	"nonce": "mwrpX2axDATQBgATTpIuVuIlmc1Qqha2ZCg0TUCJzdI",
+	"aud": [
+		"resource-client-id"
+	],
+	"acr": "1",
+	"azp": "resource-client-id",
+	"auth_time": "2021-03-09T14:41:23Z",
+	"name": "John Smith",
+	"exp": "2021-03-10T00:41:23Z",
+	"session_state": "4eb75cd8-b9cd-483f-9e00-de1ebe15996f",
+	"family_name": "Smith",
+	"iat": "2021-03-09T14:41:23Z",
+	"email": "client@test.com",
+	"jti": "ebc2fe9d-1d3a-4408-8d7a-db09bd461b9a"
+}
+```
+
+After authorization one can perform reauests to other endpoints as well, f.e. GET resuest to http://localhost:8051/images returns all image records on resource server
+
 
 Requirements
 =============
@@ -217,5 +273,5 @@ Requirements
 * JDK 11
 * Spring Boot 2.4.3 (which in turn requires Java Developer Kit (JDK) 8 or higher)
 * Lombok library
-* Docker (used to instantiate RabbitMQ 3.6 (https://www.rabbitmq.com/) and MongoDB 4.4 (https://www.mongodb.com/)
+* Docker (used to instantiate Keycloak server and resource and client applications)
 

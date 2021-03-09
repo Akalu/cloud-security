@@ -1,0 +1,33 @@
+server:
+  error:
+    include-stacktrace: never
+  port: 9051
+  
+resource:
+  server: http://localhost:9050/api
+  
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    health:
+      show-details: always  
+  
+---
+spring:
+  security:
+      oauth2:
+        client:
+          registration:
+            keycloak: 
+              client-id: 'resource-client-id'
+              client-secret: '123'
+              authorizationGrantType: authorization_code
+              redirect-uri: '{baseUrl}/login/oauth2/code/{registrationId}'
+              scope: openid
+          provider:
+            keycloak:
+              issuer-uri: http://localhost:8083/auth/realms/research 
+              user-name-attribute: name
