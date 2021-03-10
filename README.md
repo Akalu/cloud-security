@@ -48,7 +48,7 @@ An image with ready to go keycloak server
 Building
 ========
 
-The building is quite strait-forward, use the following command to build all modules:
+The building is quite straightforward, use the following command to build all modules:
 
 ```
 mvn clean package
