@@ -340,3 +340,8 @@ Requirements
 * Lombok library (to make code's look nice)
 * Docker (used to instantiate Keycloak server and resource and client applications)
 
+Additional references
+======================
+1) https://plugins.miniorange.com/rest-api-authentication-using-keycloak-as-oauth-provider
+
+2) https://andifalk.github.io/reactive-spring-security-5-workshop/workshop-tutorial.html
