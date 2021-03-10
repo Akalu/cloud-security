@@ -4,10 +4,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import com.cloud.binding.LogOAuth2Details;
 import com.cloud.data.Image;
 
 import lombok.extern.slf4j.Slf4j;
@@ -27,9 +30,16 @@ public class ImageController {
 		this.webClient = webClient;
 	}
 
+	/**
+	 * OAuth2AuthorizedClient is not really needed here, I added it just to see the Spring oauth2 magic.
+	 * To manually implement oauth2 functionality, see the guide on https://www.baeldung.com/spring-webclient-oauth2
+	 * @param authorizedClient
+	 * @return
+	 */
 	@GetMapping("/images")
-	public Flux<Image> getAll() {
+	public Flux<Image> getAll(@RegisteredOAuth2AuthorizedClient  OAuth2AuthorizedClient authorizedClient) {
 		log.info("requesting all images");
+		log.info(LogOAuth2Details.getDetails(authorizedClient));
 		return webClient
 				.get()
 				.uri(resourceServer + "/images")

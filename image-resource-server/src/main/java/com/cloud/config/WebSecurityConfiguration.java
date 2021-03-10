@@ -53,7 +53,10 @@ public class WebSecurityConfiguration {
 
         http
         .securityContextRepository(sessionConfig)
-          .csrf().disable().httpBasic().and().cors().and().authorizeExchange()
+          .csrf().disable()
+          .httpBasic()// supports also BASIC auth - must be turned off in prod
+          .and().cors()
+          .and().authorizeExchange()
         		.matchers(EndpointRequest.toAnyEndpoint()).hasAnyRole(Role.DB_USER.name(), Role.DB_ADMIN.name())
         		.pathMatchers("/images/**")
                 .hasAnyRole(Role.DB_ADMIN.name(), Role.DB_USER.name())// potentially here can be complex logic

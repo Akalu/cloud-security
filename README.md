@@ -1,7 +1,7 @@
 
 About 
 ======
-The goal of this project is to create a minimal secure system consisting from three components:
+The goal of this research project is to create a minimal secure system consisting from three components:
 
 * the keycloak server (https://www.keycloak.org/getting-started/getting-started-docker)
 * Spring Boot resource server
@@ -15,7 +15,7 @@ Generally this project is using a lot of technologies from OWASP project (Open W
 
 Overview
 =========
-All of the code is organized into two separate services, all running in docker containers
+All of the code is organized into two separate services, the Keycloak server is running in docker container
 
 # Resource service
 
@@ -32,7 +32,8 @@ name: image_client
 port: 8051
 
 ## Description
-Implemented on the basis of Spring Boot this service is using in-memory reactive database to hold a sample data (in the form of Image records)
+Implemented on the basis of Spring Boot this service is using the resource service to perform various operations with Image records.
+For demonstration purposes 
 
 
 # keycloak
@@ -70,6 +71,12 @@ In the end of work one can shut down and delete containers:
 ```
 docker-compose -f docker-compose.yml down
 ```
+Run resource server and clien app as a Spring Boot apps, for example:
+
+```
+java -jar ./image-resource-server/target/image-resource-server-1.0.0-SNAPSHOT.jar
+```
+
 
 Keycloak initial setup
 =======================
@@ -87,7 +94,7 @@ For the simplicity and convenience I bootstrapped all services including the key
 
 Note, that the  server is starting quite slow, and initialization takes a quite time
 
-There are 2 endpoints available, both on http and https ones
+There are 2 endpoints available, both on http (http://localhost:8083) and https (https://localhost:8443) ones. During R&D phase One can use any endpoint, but in production obviously makes sense to switch to https.
 
 Navigate to https://localhost:8443/auth/ and log in as admin (default user)
 
@@ -97,6 +104,8 @@ The further work can be done in two ways:
 2) setup all settings from scratch
 
 Here I will briefly describe the latter one (details can be found at https://www.keycloak.org/getting-started/getting-started-docker), and then I will show how to save the created configuration as a json.
+
+# Configuring Keycloak server from scratch
 
 ## Create a realm
 
@@ -146,7 +155,7 @@ Let’s now try to login to the account console to verify the user is configured
    
 ## Testing public token via rest request
 
-The request 
+The first test request to perform: 
 
 ```
 GET http://localhost:8083/auth/realms/research
@@ -187,10 +196,31 @@ GET http://localhost:8083/auth/realms/research/.well-known/openid-configuration
   <skipped for brevity>
 }
 ```
+
+Note the  issuer URL - this url must be included in config files
+
+# Configuring Keycloak server from pre-configuration saved in json files 
+
+1) Navigate browser to the login page (https://localhost:8443/auth/)
+2) Log in to admin console
+3) Use import configuration with option "If a resource exists = skip and Import client roles = OFF" and use pre-configured json from /config/realm-export-roles.json as a source.
+4) Use Add realm -> from json to import realm configuration (realm itself and all client apps) and use pre-configured json from /config/realm-export.json as a source.
+
+Unfortunately Keycloak v.12 does not have an option to import users, they must be added manually - use the instructions from Create a user section describing the whole process in details
+
+# Configuring resource and client microservices
+
 ## Settings on the resource server side
 
 
-The most important urls from this list are authorization_endpoint and token_endpoint - they must be set in Spring Config file
+The most important urls from this list are realm's endpoint, as well as authorization_endpoint and token_endpoint - they must be set in Spring Config file. The realm URL usually has the structure
+
+```
+<keyloak_url:port>/auth/realms/<realm_name>
+```
+(This is the issuer URL)
+
+So the final variant of oauth2 configuration section in YAML file should look like:
 
 ```
 spring:
@@ -200,15 +230,40 @@ spring:
         jwt:
           issuer-uri: http://localhost:8083/auth/realms/research 
 ```
-The issuer url is used to look up the well known configuration page to get all required configuration settings to set up a resource server
+The issuer url is used to look up the well known configuration page to get all required configuration settings to set up a resource server. On this stage the configuration of resource server is done.
 
 One can run server and authorize using the standard oauth2 flow. As a result two tokens will be retrieved, access_token and refresh_token
 
-The first one, access_token, must be included in each consecutive request to the server as an Authorization: Bearer token
+The first one, access_token, must be included in each consecutive request to the server as an Authorization: Bearer token, like so:
 
-a
+```
+> GET /api/images HTTP/1.1
+> Host: localhost:8050
+> User-Agent: insomnia/2021.1.0
+> Cookie: SESSION=; JSESSIONID=649423523B71EE9D64C0D828C15C5F7C; SESSION=06f503ff-71fd-4355-bab7-2b18ec69b38e
+> Authorization: Bearer eyJhbGciOi...jkh6Y
+> Accept: */*
+
+* Mark bundle as not supporting multiuse
+
+< HTTP/1.1 200 OK
+< transfer-encoding: chunked
+< Content-Type: application/json
+< Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+< Pragma: no-cache
+< Expires: 0
+< X-Content-Type-Options: nosniff
+< X-Frame-Options: DENY
+< X-XSS-Protection: 1 ; mode=block
+< Referrer-Policy: no-referrer
+
+* Replaced cookie SESSION="" for domain localhost, path /api/, expire 1
+
+< Set-Cookie: SESSION=; Path=/api/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax
+```
+
+
 Some further details can be found here: https://www.baeldung.com/spring-security-oauth-resource-server
-
 
 
 
@@ -235,7 +290,7 @@ spring:
               user-name-attribute: name
 ```
 
-
+Start a new browser's private session.
 Navigate browser to http://localhost:8051/userinfo and after authorization at Keycloak the server returns the information about current authorized user like so:
 
 ```
@@ -264,14 +319,24 @@ Navigate browser to http://localhost:8051/userinfo and after authorization at Ke
 }
 ```
 
-After authorization one can perform reauests to other endpoints as well, f.e. GET resuest to http://localhost:8051/images returns all image records on resource server
+After authorization one can perform requests to other endpoints as well, f.e. GET request to http://localhost:8051/images returns all image records on resource server:
 
+One can see in browser the result as:
+
+```
+[{"id":1,"name":"sample image","owner":"me"}]
+```
+
+Note, in case of browser there is no need to make a second authorization - browser will use cookies. In other test software include token in each request. 
+Note also, that there are 2 active sessions (see the sessions tab for appropriate client)
+
+The process of testing of transitive requests (from external client app through java client to resource server) is more complex
 
 Requirements
 =============
 
 * JDK 11
 * Spring Boot 2.4.3 (which in turn requires Java Developer Kit (JDK) 8 or higher)
-* Lombok library
+* Lombok library (to make code's look nice)
 * Docker (used to instantiate Keycloak server and resource and client applications)
 

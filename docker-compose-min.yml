@@ -12,19 +12,5 @@ services:
         - '8083:8080'
         - '8443:8443'
         - '9990:9990'
-
-  resource-server:
-    build: image-resource-server
-    image: image_resource_server
-    container_name: image_resource_server
-    ports:
-      - '8050:8050'
-
-  resource-client:
-    build: image-client
-    image: image_client
-    container_name: image_client
-    ports:
-      - '8051:8051'
  
      

@@ -12,7 +12,13 @@ public class SecurityConfiguration {
 
 	@Bean
 	SecurityWebFilterChain configure(ServerHttpSecurity http) {
-		http.authorizeExchange().anyExchange().authenticated().and().oauth2Login().and().oauth2Client();
+		
+        http
+        .csrf().disable()
+        .cors()
+        .and().authorizeExchange().anyExchange().authenticated()
+        .and().oauth2Login()
+        .and().oauth2Client();
 		return http.build();
 	}
 }
