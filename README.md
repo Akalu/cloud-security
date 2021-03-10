@@ -109,8 +109,7 @@ Here I will briefly describe the latter one (details can be found at https://www
 
 ## Create a realm
 
-Master dropdown in the top-left corner -> Add realm 
-Name it as 'research', then create
+Master dropdown in the top-left corner -> 'Add realm' . Name it as 'research'
 
 ## Create a user
 
@@ -144,14 +143,15 @@ Let’s now try to login to the account console to verify the user is configured
 
 1) Create a client: <Realm_name> -> Clients -> Create 
   in this example I added a client with id=test-client and base and redirect url https://www.keycloak.org/app/
-2) go to https://www.keycloak.org/app/
-3) choose https://localhost:8443/auth as your keycloak server, research realm and test-client as input and test oath2 authorization flow 
+2) Go to https://www.keycloak.org/app/
+3) Choose https://localhost:8443/auth as your keycloak server, research realm and test-client as input and test oath2 authorization flow 
    After successful authorization one can see the screen keycloak_07b.png and toast for John Smith
    
 ## Creating a client app
 
 1) Create a client: <Realm_name> -> Clients -> Create 
-  in this example I added a client with id=resource-client-id and empty base/root urls and redirect url as *
+  
+In this example I added a client with id=resource-client-id and empty base/root urls and redirect url as *
    
 ## Testing public token via rest request
 
