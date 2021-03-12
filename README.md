@@ -33,7 +33,7 @@ port: 8051
 
 ## Description
 Implemented on the basis of Spring Boot this service is using the resource service to perform various operations with Image records.
-For demonstration purposes 
+Added for demonstration purposes 
 
 
 # keycloak
@@ -42,7 +42,7 @@ name:keycloak
 port:8083
 
 ## Description
-An image with ready to go keycloak server
+An image with compiled and ready to go keycloak server
 
 
 Building
@@ -63,7 +63,7 @@ First, start all managed services using command:
 ```
 docker-compose -f docker-compose.yml up --build
 ```
-This command will start MongoDB, RabbitMQ and config service
+This command will start Keycloak server
 
 
 In the end of work one can shut down and delete containers:
@@ -81,7 +81,7 @@ java -jar ./image-resource-server/target/image-resource-server-1.0.0-SNAPSHOT.ja
 Keycloak initial setup
 =======================
 
-The most difficult part would be the keycloak server installation
+The most difficult part would be the keycloak server installation and configuration
 
 The server alone can be installed using the following command:
 
